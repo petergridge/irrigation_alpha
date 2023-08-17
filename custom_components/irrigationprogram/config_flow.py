@@ -21,7 +21,8 @@ from .const import (
     ATTR_RAIN_SENSOR,
     ATTR_REPEAT,
     ATTR_RUN_FREQ,
-    ATTR_SHOW_CONFIG,
+#    ATTR_SHOW_CONFIG,
+    ATTR_DEVICE_TYPE,
     ATTR_START,
     ATTR_WAIT,
     ATTR_WATER,
@@ -46,7 +47,8 @@ PROGRAM_SCHEMA = vol.Schema(
             {"domain": "binary_sensor"}
         ),
         vol.Optional(ATTR_IRRIGATION_ON): sel.EntitySelector({"domain": "input_boolean"}),
-        vol.Optional(ATTR_SHOW_CONFIG): sel.EntitySelector({"domain": "input_boolean"}),
+#        vol.Optional(ATTR_SHOW_CONFIG): sel.EntitySelector({"domain": "input_boolean"}),
+        vol.Optional(ATTR_DEVICE_TYPE, default='generic'): sel.SelectSelector({"options": ["generic", "rainbird"], "translation_key":ATTR_DEVICE_TYPE}),
         vol.Optional(ATTR_DELAY): sel.EntitySelector({"domain": "input_number"}),
         vol.Optional(ATTR_INTERLOCK, default=True): cv.boolean,
     }
@@ -61,7 +63,8 @@ PROGRAM_ATTR = [
     [False, ATTR_RUN_FREQ, sel.EntitySelector({"domain": ["input_select","sensor"]})],
     [False, ATTR_MONITOR_CONTROLLER, sel.EntitySelector({"domain": "binary_sensor"})],
     [False, ATTR_IRRIGATION_ON, sel.EntitySelector({"domain": "input_boolean"})],
-    [False, ATTR_SHOW_CONFIG, sel.EntitySelector({"domain": "input_boolean"})],
+#    [False, ATTR_SHOW_CONFIG, sel.EntitySelector({"domain": "input_boolean"})],
+    [False, ATTR_DEVICE_TYPE, sel.SelectSelector({"options": ["generic", "rainbird"], "translation_key":ATTR_DEVICE_TYPE})],
     [False, ATTR_DELAY, sel.EntitySelector({"domain": "input_number"})],
     [False, ATTR_INTERLOCK,cv.boolean]
 ]
@@ -79,6 +82,7 @@ ZONE_ATTR = [
     [False, ATTR_RAIN_SENSOR, sel.EntitySelector({"domain": ["binary_sensor","input_boolean"]})],
     [False, ATTR_IGNORE_RAIN_SENSOR, sel.EntitySelector({"domain": "input_boolean"})],
     [False, ATTR_ENABLE_ZONE, sel.EntitySelector({"domain": "input_boolean"})],
+#    [False, ATTR_SHOW_CONFIG, sel.EntitySelector({"domain": "input_boolean"})],
 ]
 
 _LOGGER = logging.getLogger(__name__)
@@ -89,7 +93,7 @@ class IrrigationFlowHandler(config_entries.ConfigFlow):
     """FLow handler"""
 
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
-    VERSION = 2
+    VERSION = 3
 
     def __init__(self) -> None:
         self._errors = {}
@@ -290,7 +294,7 @@ class IrrigationFlowHandler(config_entries.ConfigFlow):
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
     ''' option flow'''
-    VERSION = 2
+    VERSION = 3
     def __init__(self, config_entry) -> None:
         self.config_entry = config_entry
         self._name = self.config_entry.data.get(CONF_NAME)
@@ -374,8 +378,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     newdata.pop(ATTR_RUN_FREQ)
                 if newdata.get(ATTR_MONITOR_CONTROLLER):
                     newdata.pop(ATTR_MONITOR_CONTROLLER)
-                if newdata.get(ATTR_SHOW_CONFIG):
-                    newdata.pop(ATTR_SHOW_CONFIG)
+#                if newdata.get(ATTR_SHOW_CONFIG):
+#                    newdata.pop(ATTR_SHOW_CONFIG)
                 if newdata.get(ATTR_IRRIGATION_ON):
                     newdata.pop(ATTR_IRRIGATION_ON)
                 if newdata.get(ATTR_INTERLOCK):

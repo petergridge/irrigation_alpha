@@ -21,6 +21,7 @@ from .const import (
     DOMAIN,
     SWITCH_ID_FORMAT,
     CONST_SWITCH,
+    ATTR_DEVICE_TYPE
     )
 
 _LOGGER = logging.getLogger(__name__)
@@ -32,10 +33,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(
+            entry, Platform.SENSOR
+            )
+    )
+    hass.async_create_task(
+        hass.config_entries.async_forward_entry_setup(
+            entry, Platform.BINARY_SENSOR
+            )
+    )
+    hass.async_create_task(
+        hass.config_entries.async_forward_entry_setup(
             entry, Platform.SWITCH
         )
     )
-
     entry.async_on_unload(entry.add_update_listener(config_entry_update_listener))
     return True
 
@@ -46,13 +56,22 @@ async def config_entry_update_listener(hass: HomeAssistant, entry: ConfigEntry) 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     #clean up any related helpers
+
+    await hass.config_entries.async_unload_platforms(
+        entry, (Platform.SENSOR,)
+        )
+    await hass.config_entries.async_unload_platforms(
+        entry, (Platform.BINARY_SENSOR,)
+        )
     if unload_ok := await hass.config_entries.async_unload_platforms(
         entry, (Platform.SWITCH,)
     ):
+
         return unload_ok
 
 async def async_setup(hass:HomeAssistant, config):
     '''setup the irrigation'''
+    hass.data.setdefault(DOMAIN, {})
 
     async def async_stop_programs(call):
         ''' stop all running programs'''
@@ -71,35 +90,11 @@ async def async_setup(hass:HomeAssistant, config):
                 else:
                     _LOGGER.warning("Irrigation Program '%s' terminated ", data.get(ATTR_NAME))
                 await hass.services.async_call(CONST_SWITCH, SERVICE_TURN_OFF, servicedata)
-
     # END async_stop_switches
-    # register service
+
+    # register the service
     hass.services.async_register(DOMAIN, "stop_programs", async_stop_programs)
 
-    #import YAML to config entries
-    irrig_config = {}
-    hass.data.setdefault(DOMAIN, {})
-    platforms = config.get(CONST_SWITCH)
-    # build list of yaml definitions
-    if platforms:
-        for domain in platforms:
-            if domain.get("platform") == DOMAIN:
-                irrig_config = domain.get("switches")
-                break
-        # process each yaml irrigation program
-        for item in irrig_config.items():
-            irrig_input = {}
-            irrig_input[CONF_NAME]=item[0]
-            irrig_input.update(item[1])
-            #check if this config has already been imported
-            if _async_find_matching_config_entry(hass,irrig_input[CONF_NAME]) is False:
-                hass.async_create_task(
-                    hass.config_entries.flow.async_init(
-                        DOMAIN,
-                        context={"source": config_entries.SOURCE_IMPORT},
-                        data=irrig_input,
-                    )
-                )
     return True
 
 @callback
@@ -112,26 +107,19 @@ def _async_find_matching_config_entry(
             return True
     return False
 
-#async def async_migrate_entry(hass:HomeAssistant, config_entry: ConfigEntry):
-#    """Migrate old entry."""
-#    _LOGGER.debug("Migrating from version %s", config_entry.version)
+async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry):
+    """Migrate old entry."""
+    _LOGGER.info("Migrating from version %s", config_entry.version)
 
-#---- REVERT to UI based impementation ----#
+    if config_entry.version == 2:
+        if config_entry.options == {}:
+            new = {**config_entry.data} #config_entry.data
+        else:
+            new = {**config_entry.options} #config_entry.options
+        new.update({ATTR_DEVICE_TYPE: 'generic'})
+        config_entry.version = 3
+        hass.config_entries.async_update_entry(config_entry, data=new)
 
-# uncomment this when removing old group method and inputs
-#    if config_entry.version == 1:
-#        if config_entry.options == {}:
-#            new = config_entry.data
-#        else:
-#            new = config_entry.options
-#        if ATTR_GROUPS in new:
-#            #new grouping model implemented
-#            for zonecount, zone in enumerate(new[ATTR_ZONES]):
-#                if ATTR_ZONE_GROUP in zone:
-#                    #delete old grouping method
-#                    new[ATTR_ZONES][zonecount].pop(ATTR_ZONE_GROUP)
-#            config_entry.version = 2
-#        hass.config_entries.async_update_entry(config_entry, data=new)
-#        _LOGGER.info("Migration to version %s successful", config_entry.version)
+    _LOGGER.info("Migration to version %s successful", config_entry.version)
+    return True
 
-#    return True
