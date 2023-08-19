@@ -1,6 +1,7 @@
 '''Constants'''
 
-RAINBIRD_TURN_ON = 'rainbird.start_irrigation'
+RAINBIRD_TURN_ON = 'start_irrigation'
+RAINBIRD = 'rainbird'
 RAINBIRD_DURATION = 'duration'
 
 DOMAIN = "irrigationprogram"

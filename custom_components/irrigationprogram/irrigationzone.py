@@ -31,7 +31,8 @@ from .const import (
     CONST_ZERO_FLOW_DELAY,
     DOMAIN,
     RAINBIRD_TURN_ON,
-    RAINBIRD_DURATION
+    RAINBIRD_DURATION,
+    RAINBIRD
 
 )
 
@@ -469,7 +470,7 @@ class IrrigationZone:
                 if self._device_type == 'rainbird':
                    # RAINBIRD controller requires a different service call
                     await self.hass.services.async_call(
-                        CONST_SWITCH, RAINBIRD_TURN_ON, {ATTR_ENTITY_ID: self._switch, RAINBIRD_DURATION: self.water_value()}
+                        RAINBIRD, RAINBIRD_TURN_ON, {ATTR_ENTITY_ID: self._switch, RAINBIRD_DURATION: self.water_value()}
                     )
                 else:
                     await self.hass.services.async_call(
