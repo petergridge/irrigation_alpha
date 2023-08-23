@@ -367,7 +367,6 @@ class IrrigationProgram(SwitchEntity, RestoreEntity):
                 # run validation over the zones
                 zone.validate()
 
-
             #set the next run attribute
             await update_next_run(None, None, None)
 
@@ -561,6 +560,7 @@ class IrrigationProgram(SwitchEntity, RestoreEntity):
                     zone.name(),
                     ATTR_NEXT_RUN,
                 )
+
             hour = int(self.hass.states.get(self._start_time).state.split(':')[0])
             minute = int(self.hass.states.get(self._start_time).state.split(':')[1])
             self._extra_attrs[zonenextrun] = zone.next_run(hour, minute,self.irrigation_on_value())
@@ -655,6 +655,7 @@ class IrrigationProgram(SwitchEntity, RestoreEntity):
 
     async def async_turn_on(self, **kwargs):
         ''' Turn on the switch'''
+
         if self._state is True:
             #program is still running
             return

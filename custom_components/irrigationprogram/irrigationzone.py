@@ -320,17 +320,21 @@ class IrrigationZone:
             next_run = datetime.utcfromtimestamp(next_run).replace(tzinfo=timezone.utc).astimezone(tz=localtimezone)
             return next_run
         # Frq is numeric
-        if self.run_freq_value().isnumeric():
-            if (datetime.now().astimezone(tz=localtimezone) - today_run).total_seconds()/86400 >= int(self.run_freq_value()):
+#        if self.run_freq_value().isnumeric():
+        try: # is Frq numeric?
+            frq = int(float(self.run_freq_value()))
+            if (datetime.now().astimezone(tz=localtimezone) - today_run).total_seconds()/86400 >= frq:
                 #zone has not run due to rain or other factor
                 numeric_freq = math.ceil((datetime.now().astimezone(tz=localtimezone) - today_run).total_seconds()/86400)
             else:
-                numeric_freq = int(float(self.run_freq_value()))
+                numeric_freq = frq
             next_run = dt_util.as_timestamp(today_run) + (numeric_freq * 86400)
             next_run = datetime.utcfromtimestamp(next_run).replace(tzinfo=timezone.utc).astimezone(tz=localtimezone)
             return next_run
-        #Frq is Alpha
-        string_freq = self.run_freq_value()
+        except ValueError: #Frq is alpha
+            #Frq is Alpha
+            string_freq = self.run_freq_value()
+#        string_freq = self.run_freq_value()
         # remove spaces, new line, quotes and brackets
         string_freq = string_freq.replace(" ","").replace("\n","").replace("'","").replace('"',"").strip("[]'").split(",")
         string_freq = [x.capitalize() for x in string_freq]
@@ -413,14 +417,14 @@ class IrrigationZone:
                 / 86400
             )
 
-        if self.run_freq_value().isnumeric():
+        try:
             numeric_freq = int(float(self.run_freq_value()))
             if numeric_freq <= last_ran_relative or not self._last_ran:
                 return True
             if scheduled: return False
             #this is a manual request
             return True
-        else:
+        except ValueError:
             string_freq = self.run_freq_value()
             string_freq = string_freq.replace(" ","").replace("\n","").replace("'","").replace('"',"").strip("[]'").split(",")
             string_freq = [x.capitalize() for x in string_freq]
