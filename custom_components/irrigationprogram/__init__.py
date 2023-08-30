@@ -1,10 +1,11 @@
 ''' __init__'''
-
 from __future__ import annotations
 from ctypes.wintypes import BOOL
 import logging
 from homeassistant.util import slugify
 import asyncio
+from . import utils
+from pathlib import Path
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -15,7 +16,7 @@ from homeassistant.const import (
     Platform,
 )
 from homeassistant.core import HomeAssistant,callback
-from homeassistant import config_entries
+#from homeassistant import config_entries
 
 from .const import (
     DOMAIN,
@@ -73,6 +74,15 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_setup(hass:HomeAssistant, config):
     '''setup the irrigation'''
     hass.data.setdefault(DOMAIN, {})
+
+    # 1. Serve lovelace card
+    path = Path(__file__).parent / "www"
+    utils.register_static_path(hass.http.app, "/irrigationprogram/irrigation-card.js", path / "irrigation-card.js")
+
+    # 2. Add card to resources
+    version = getattr(hass.data["integrations"][DOMAIN], "version", 0)
+    await utils.init_resource(hass, "/irrigationprogram/irrigation-card.js", str(version))
+
 
     async def async_stop_programs(call):
         ''' stop all running programs'''
